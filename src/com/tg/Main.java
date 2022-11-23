@@ -1,7 +1,10 @@
 package com.tg;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 public class Main {
-    private static Object lock = new Object();
+    private static ReentrantLock lock = new ReentrantLock(true); // fair locks try to be first come first served
+    // only fairness in acquiring the lock is guaranteed, not fairness in threads scheduling
 
     public static void main(String[] args) {
         Thread t1 = new Thread(new Worker(ThreadColor.ANSI_RED), "Priority 10");
@@ -23,7 +26,7 @@ public class Main {
         t5.start();
     }
 
-    private static class Worker implements Runnable{
+    private static class Worker implements Runnable {
         private int runCount = 1;
         private String threadColor;
 
@@ -33,10 +36,13 @@ public class Main {
 
         @Override
         public void run() {
-            for(int i=0; i<100; i++){
-                synchronized (lock) {
+            for (int i = 0; i < 100; i++) {
+                lock.lock();
+                try {
                     System.out.format(threadColor + "%s: runCount = %d\n", Thread.currentThread().getName(), runCount++);
                     // execute critical section of code
+                } finally {
+                    lock.unlock();
                 }
             }
         }
